@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
 
+
 TOKEN = "t.T3Y_FHopd2AHt6rHo2kG-cDcSe9vxjtXsMwCM3LzpYEZqgEII_dWtUwqjJ1utKZp3H-VgArGbPla-3K95MbteA"
 # Будем получать FIGI автоматически
 FIGI = None
@@ -607,7 +608,7 @@ def calculate_indicators(df):
     """Рассчитывает технические индикаторы"""
     try:
         # Трендовые индикаторы
-    df['macd'] = MACD(close=df['close']).macd()
+        df['macd'] = MACD(close=df['close']).macd()
         df['macd_signal'] = MACD(close=df['close']).macd_signal()
         df['macd_diff'] = MACD(close=df['close']).macd_diff()
         
@@ -617,7 +618,7 @@ def calculate_indicators(df):
         df['ema_26'] = EMAIndicator(close=df['close'], window=26).ema_indicator()
         
         # Моментум индикаторы
-    df['rsi'] = RSIIndicator(close=df['close']).rsi()
+        df['rsi'] = RSIIndicator(close=df['close']).rsi()
         df['stoch_k'] = StochasticOscillator(high=df['high'], low=df['low'], close=df['close']).stoch()
         df['stoch_d'] = StochasticOscillator(high=df['high'], low=df['low'], close=df['close']).stoch_signal()
         df['williams_r'] = WilliamsRIndicator(high=df['high'], low=df['low'], close=df['close']).williams_r()
@@ -647,22 +648,22 @@ def calculate_indicators(df):
         return df
     except Exception as e:
         st.error(f"Ошибка при расчете индикаторов: {e}")
-    return df
+        return df
 
 def analyze(df):
     """Анализирует сигналы индикаторов"""
     try:
-    last = df.iloc[-1]
+        last = df.iloc[-1]
         
         # Трендовые сигналы
-    macd_signal = last['macd'] > 0
+        macd_signal = last['macd'] > 0
         sma_20_signal = last['close'] > last['sma_20']
         sma_50_signal = last['close'] > last['sma_50']
         ema_12_signal = last['close'] > last['ema_12']
         ema_26_signal = last['close'] > last['ema_26']
         
         # Моментум сигналы
-    rsi_signal = last['rsi'] > 55
+        rsi_signal = last['rsi'] > 55
         stoch_signal = last['stoch_k'] > 50
         williams_signal = last['williams_r'] > -50
         roc_signal = last['roc'] > 0
@@ -692,11 +693,11 @@ def analyze(df):
         
         # Определяем сигнал
         if total_votes >= max_votes * 0.6:  # 60% голосов за рост
-        return "UP"
+            return "UP"
         elif total_votes <= max_votes * 0.4:  # 40% голосов за рост = падение
-        return "DOWN"
-    else:
-        return "NEUTRAL"
+            return "DOWN"
+        else:
+            return "NEUTRAL"
 
     except Exception as e:
         st.error(f"Ошибка при анализе: {e}")
@@ -708,32 +709,32 @@ async def get_candles(figi, interval=None):
         interval = INTERVAL
         
     try:
-    async with AsyncClient(TOKEN) as client:
+        async with AsyncClient(TOKEN) as client:
             # Используем timezone-aware datetime
             now = dt.datetime.now(dt.timezone.utc)
             # Увеличиваем период до 7 дней для получения большего количества данных
             from_ = now - dt.timedelta(days=7)
 
-        candles = await client.market_data.get_candles(
+            candles = await client.market_data.get_candles(
                 figi=figi,
-            from_=from_,
-            to=now,
+                from_=from_,
+                to=now,
                 interval=interval
-        )
+            )
             
             if not candles.candles:
                 st.warning("Не получены данные свечей")
                 return pd.DataFrame()
                 
-        df = pd.DataFrame([{
-            'time': c.time,
-            'open': float(c.open.units) + c.open.nano / 1e9,
-            'high': float(c.high.units) + c.high.nano / 1e9,
-            'low': float(c.low.units) + c.low.nano / 1e9,
-            'close': float(c.close.units) + c.close.nano / 1e9,
-            'volume': c.volume
-        } for c in candles.candles])
-        return df
+            df = pd.DataFrame([{
+                'time': c.time,
+                'open': float(c.open.units) + c.open.nano / 1e9,
+                'high': float(c.high.units) + c.high.nano / 1e9,
+                'low': float(c.low.units) + c.low.nano / 1e9,
+                'close': float(c.close.units) + c.close.nano / 1e9,
+                'volume': c.volume
+            } for c in candles.candles])
+            return df
 
     except Exception as e:
         st.warning(f"⚠️ Ошибка при получении данных: {e}")
@@ -915,208 +916,139 @@ def plot_chart(df, instrument_type_text="Инструмент", interval_text="1
         st.error(f"Ошибка при построении графика: {e}")
 
 def display_signals(df):
-    """Отображает сигналы индикаторов с современным дизайном"""
+    """Отображает сигналы индикаторов с современным дизайном (без кастомного HTML)"""
     try:
         last = df.iloc[-1]
-        
         # Создаем вкладки для разных категорий индикаторов
         tab1, tab2, tab3, tab4 = st.tabs(["📊 Трендовые", "📈 Моментум", "📉 Волатильность", "📊 Объемные"])
-        
-        def create_indicator_card(name, value, signal, is_bullish, icon="📊"):
-            """Создает красивую карточку индикатора"""
-            color = "#00d4aa" if is_bullish else "#ff6b6b"
-            bg_color = "#f0fff4" if is_bullish else "#fff5f5"
-            border_color = "#00d4aa" if is_bullish else "#ff6b6b"
-            
-            return f"""
-            <div class="indicator-card indicator-{'bullish' if is_bullish else 'bearish'}" 
-                 style="background: {bg_color}; border-left-color: {border_color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div class="metric-label">{icon} {name}</div>
-                        <div class="metric-value">{value}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="color: {color}; font-weight: 700; font-size: 0.9rem;">{signal}</div>
-                    </div>
-                </div>
-            </div>
-            """
-        
+
         with tab1:
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown(create_indicator_card(
-                    "MACD", f"{last['macd']:.4f}", 
-                    "ПОКУПКА" if last['macd'] > 0 else "ПРОДАЖА",
-                    last['macd'] > 0, "📊"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "SMA (20)", f"{last['sma_20']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['sma_20'] else "ПРОДАЖА",
-                    last['close'] > last['sma_20'], "📉"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "EMA (12)", f"{last['ema_12']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['ema_12'] else "ПРОДАЖА",
-                    last['close'] > last['ema_12'], "📈"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "ADX", f"{last['adx']:.1f}", 
-                    "СИЛЬНЫЙ ТРЕНД" if last['adx'] > 25 else "СЛАБЫЙ ТРЕНД",
-                    last['adx'] > 25, "🎯"
-                ), unsafe_allow_html=True)
-            
+                st.metric(
+                    label="MACD",
+                    value=f"{last['macd']:.4f}",
+                    delta="Покупка" if last['macd'] > 0 else "Продажа",
+                    help="Индикатор MACD"
+                )
+                st.metric(
+                    label="SMA (20)",
+                    value=f"{last['sma_20']:.2f}",
+                    delta="Покупка" if last['close'] > last['sma_20'] else "Продажа",
+                    help="SMA 20"
+                )
+                st.metric(
+                    label="EMA (20)",
+                    value=f"{last['ema_20']:.2f}",
+                    delta="Покупка" if last['close'] > last['ema_20'] else "Продажа",
+                    help="EMA 20"
+                )
             with col2:
-                st.markdown(create_indicator_card(
-                    "SMA (50)", f"{last['sma_50']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['sma_50'] else "ПРОДАЖА",
-                    last['close'] > last['sma_50'], "📉"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "EMA (26)", f"{last['ema_26']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['ema_26'] else "ПРОДАЖА",
-                    last['close'] > last['ema_26'], "📈"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "CCI", f"{last['cci']:.1f}", 
-                    "ПОКУПКА" if last['cci'] > 0 else "ПРОДАЖА",
-                    last['cci'] > 0, "🔄"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "TRIX", f"{last['trix']:.4f}", 
-                    "ПОКУПКА" if last['trix'] > 0 else "ПРОДАЖА",
-                    last['trix'] > 0, "📊"
-                ), unsafe_allow_html=True)
-        
+                st.metric(
+                    label="ADX",
+                    value=f"{last['adx']:.2f}",
+                    delta="Сильный тренд" if last['adx'] > 25 else "Слабый тренд",
+                    help="ADX"
+                )
+                st.metric(
+                    label="CCI",
+                    value=f"{last['cci']:.2f}",
+                    delta="Покупка" if last['cci'] > 100 else ("Продажа" if last['cci'] < -100 else "Нейтрально"),
+                    help="CCI"
+                )
+                st.metric(
+                    label="TRIX",
+                    value=f"{last['trix']:.2f}",
+                    delta="Покупка" if last['trix'] > 0 else "Продажа",
+                    help="TRIX"
+                )
+
         with tab2:
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown(create_indicator_card(
-                    "RSI", f"{last['rsi']:.1f}", 
-                    "ПОКУПКА" if last['rsi'] > 55 else "ПРОДАЖА",
-                    last['rsi'] > 55, "📈"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "Stochastic %K", f"{last['stoch_k']:.1f}", 
-                    "ПОКУПКА" if last['stoch_k'] > 50 else "ПРОДАЖА",
-                    last['stoch_k'] > 50, "📊"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "Williams %R", f"{last['williams_r']:.1f}", 
-                    "ПОКУПКА" if last['williams_r'] > -50 else "ПРОДАЖА",
-                    last['williams_r'] > -50, "📈"
-                ), unsafe_allow_html=True)
-            
+                st.metric(
+                    label="RSI",
+                    value=f"{last['rsi']:.1f}",
+                    delta="Покупка" if last['rsi'] > 55 else "Продажа",
+                    help="RSI"
+                )
+                st.metric(
+                    label="Stochastic %K",
+                    value=f"{last['stoch_k']:.1f}",
+                    delta="Покупка" if last['stoch_k'] > 50 else "Продажа",
+                    help="Stochastic %K"
+                )
+                st.metric(
+                    label="Williams %R",
+                    value=f"{last['williams_r']:.1f}",
+                    delta="Покупка" if last['williams_r'] > -50 else "Продажа",
+                    help="Williams %R"
+                )
             with col2:
-                st.markdown(create_indicator_card(
-                    "ROC", f"{last['roc']:.2f}", 
-                    "ПОКУПКА" if last['roc'] > 0 else "ПРОДАЖА",
-                    last['roc'] > 0, "📊"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "Stochastic %D", f"{last['stoch_d']:.1f}", 
-                    "ПОКУПКА" if last['stoch_d'] > 50 else "ПРОДАЖА",
-                    last['stoch_d'] > 50, "📊"
-                ), unsafe_allow_html=True)
-        
+                st.metric(
+                    label="ROC",
+                    value=f"{last['roc']:.2f}",
+                    delta="Покупка" if last['roc'] > 0 else "Продажа",
+                    help="ROC"
+                )
+                st.metric(
+                    label="Stochastic %D",
+                    value=f"{last['stoch_d']:.1f}",
+                    delta="Покупка" if last['stoch_d'] > 50 else "Продажа",
+                    help="Stochastic %D"
+                )
+
         with tab3:
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown(create_indicator_card(
-                    "BB Middle", f"{last['bb_middle']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['bb_middle'] else "ПРОДАЖА",
-                    last['close'] > last['bb_middle'], "📊"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "BB %B", f"{last['bb_percent']:.3f}", 
-                    "ПОКУПКА" if last['bb_percent'] > 0.5 else "ПРОДАЖА",
-                    last['bb_percent'] > 0.5, "📈"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-label">📊 BB Upper</div>
-                    <div class="metric-value">{last['bb_upper']:.2f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-label">📊 BB Lower</div>
-                    <div class="metric-value">{last['bb_lower']:.2f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
+                st.metric(
+                    label="Bollinger Bands (BB)",
+                    value=f"{last['bb_middle']:.2f}",
+                    delta="Верхняя" if last['close'] > last['bb_middle'] else "Нижняя",
+                    help="Bollinger Bands Middle"
+                )
+                st.metric(
+                    label="ATR",
+                    value=f"{last['atr']:.2f}",
+                    delta="Высокая" if last['atr'] > 1 else "Низкая",
+                    help="Average True Range"
+                )
             with col2:
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-label">📊 ATR (Волатильность)</div>
-                    <div class="metric-value">{last['atr']:.2f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-label">📈 BB Width</div>
-                    <div class="metric-value">{last['bb_width']:.3f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        
+                st.metric(
+                    label="BB High",
+                    value=f"{last['bb_upper']:.2f}",
+                    delta="Пробой" if last['close'] > last['bb_upper'] else "В пределах",
+                    help="Bollinger Bands High"
+                )
+                st.metric(
+                    label="BB Low",
+                    value=f"{last['bb_lower']:.2f}",
+                    delta="Пробой" if last['close'] < last['bb_lower'] else "В пределах",
+                    help="Bollinger Bands Low"
+                )
+
         with tab4:
             col1, col2 = st.columns(2)
             with col1:
-                obv_bullish = len(df) > 1 and last['obv'] > df['obv'].iloc[-2]
-                st.markdown(create_indicator_card(
-                    "OBV", f"{last['obv']:.0f}", 
-                    "РОСТ ОБЪЕМА" if obv_bullish else "ПАДЕНИЕ ОБЪЕМА",
-                    obv_bullish, "📊"
-                ), unsafe_allow_html=True)
-                
-                st.markdown(create_indicator_card(
-                    "VWAP", f"{last['vwap']:.2f}", 
-                    "ПОКУПКА" if last['close'] > last['vwap'] else "ПРОДАЖА",
-                    last['close'] > last['vwap'], "📈"
-                ), unsafe_allow_html=True)
-            
+                st.metric(
+                    label="VWAP",
+                    value=f"{last['vwap']:.2f}",
+                    delta="Выше" if last['close'] > last['vwap'] else "Ниже",
+                    help="Volume Weighted Average Price"
+                )
+                st.metric(
+                    label="OBV",
+                    value=f"{last['obv']:.2f}",
+                    delta="Рост" if last['obv'] > 0 else "Падение",
+                    help="On Balance Volume"
+                )
             with col2:
-                st.markdown(f"""
-                <div class="metric-container">
-                    <div class="metric-label">📊 Объем торгов</div>
-                    <div class="metric-value">{last['volume']:.0f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Показываем статистику по индикаторам
-                total_indicators = 15
-                bullish_count = sum([
-                    last['macd'] > 0, last['close'] > last['sma_20'], last['close'] > last['sma_50'],
-                    last['close'] > last['ema_12'], last['close'] > last['ema_26'], last['rsi'] > 55,
-                    last['stoch_k'] > 50, last['williams_r'] > -50, last['roc'] > 0,
-                    last['close'] > last['bb_middle'], last['bb_percent'] > 0.5,
-                    len(df) > 1 and last['obv'] > df['obv'].iloc[-2], last['close'] > last['vwap'],
-                    last['adx'] > 25, last['cci'] > 0, last['trix'] > 0
-                ])
-                
-                bullish_percent = (bullish_count / total_indicators) * 100
-                st.markdown(f"""
-                <div class="metric-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                    <div class="metric-label" style="color: rgba(255,255,255,0.9);">📊 Бычьих сигналов</div>
-                    <div class="metric-value" style="color: white;">{bullish_count}/{total_indicators}</div>
-                    <div style="font-size: 1.2rem; font-weight: 700; margin-top: 0.5rem;">{bullish_percent:.1f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
+                st.metric(
+                    label="Объём",
+                    value=f"{last['volume']:.0f}",
+                    delta="Рост" if last['volume'] > 0 else "Падение",
+                    help="Объём торгов"
+                )
     except Exception as e:
         st.error(f"Ошибка при отображении сигналов: {e}")
 
@@ -1227,13 +1159,13 @@ def main():
         else:
             st.error("Ошибка генерации демо-данных")
             return
-        
+    
     if len(df) < 20:
         st.warning(f"Недостаточно данных для анализа (получено {len(df)} свечей, нужно минимум 20)")
         return
 
-        df = calculate_indicators(df)
-        signal = analyze(df)
+    df = calculate_indicators(df)
+    signal = analyze(df)
 
     # Определяем текст интервала
     interval_text = "15 минутные"
