@@ -27,82 +27,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# PWA мета-теги и манифест
-st.markdown("""
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="РТС Трейдер">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#667eea">
-<meta name="msapplication-TileColor" content="#667eea">
-<meta name="msapplication-TileImage" content="/static/icon-144x144.png">
-
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/static/icon-192x192.png">
-<link rel="apple-touch-icon" sizes="152x152" href="/static/icon-152x152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/static/icon-192x192.png">
-<link rel="apple-touch-icon" sizes="167x167" href="/static/icon-152x152.png">
-
-<script>
-// Регистрация Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js')
-      .then(function(registration) {
-        console.log('SW registered: ', registration);
-      })
-      .catch(function(registrationError) {
-        console.log('SW registration failed: ', registrationError);
-      });
-  });
-}
-
-// Добавление в главный экран
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Показываем кнопку установки
-  const installButton = document.createElement('button');
-  installButton.textContent = '📱 Установить приложение';
-  installButton.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    padding: 10px 20px;
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    cursor: pointer;
-  `;
-  
-  installButton.addEventListener('click', () => {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('Пользователь установил приложение');
-      }
-      deferredPrompt = null;
-      installButton.remove();
-    });
-  });
-  
-  document.body.appendChild(installButton);
-});
-
-// Обработка установки
-window.addEventListener('appinstalled', (evt) => {
-  console.log('Приложение установлено');
-});
-</script>
-""", unsafe_allow_html=True)
-
 # Внедряем CSS для современного дизайна
 st.markdown("""
 <style>
@@ -683,7 +607,7 @@ def calculate_indicators(df):
     """Рассчитывает технические индикаторы"""
     try:
         # Трендовые индикаторы
-        df['macd'] = MACD(close=df['close']).macd()
+    df['macd'] = MACD(close=df['close']).macd()
         df['macd_signal'] = MACD(close=df['close']).macd_signal()
         df['macd_diff'] = MACD(close=df['close']).macd_diff()
         
@@ -693,7 +617,7 @@ def calculate_indicators(df):
         df['ema_26'] = EMAIndicator(close=df['close'], window=26).ema_indicator()
         
         # Моментум индикаторы
-        df['rsi'] = RSIIndicator(close=df['close']).rsi()
+    df['rsi'] = RSIIndicator(close=df['close']).rsi()
         df['stoch_k'] = StochasticOscillator(high=df['high'], low=df['low'], close=df['close']).stoch()
         df['stoch_d'] = StochasticOscillator(high=df['high'], low=df['low'], close=df['close']).stoch_signal()
         df['williams_r'] = WilliamsRIndicator(high=df['high'], low=df['low'], close=df['close']).williams_r()
@@ -723,22 +647,22 @@ def calculate_indicators(df):
         return df
     except Exception as e:
         st.error(f"Ошибка при расчете индикаторов: {e}")
-        return df
+    return df
 
 def analyze(df):
     """Анализирует сигналы индикаторов"""
     try:
-        last = df.iloc[-1]
+    last = df.iloc[-1]
         
         # Трендовые сигналы
-        macd_signal = last['macd'] > 0
+    macd_signal = last['macd'] > 0
         sma_20_signal = last['close'] > last['sma_20']
         sma_50_signal = last['close'] > last['sma_50']
         ema_12_signal = last['close'] > last['ema_12']
         ema_26_signal = last['close'] > last['ema_26']
         
         # Моментум сигналы
-        rsi_signal = last['rsi'] > 55
+    rsi_signal = last['rsi'] > 55
         stoch_signal = last['stoch_k'] > 50
         williams_signal = last['williams_r'] > -50
         roc_signal = last['roc'] > 0
@@ -768,12 +692,12 @@ def analyze(df):
         
         # Определяем сигнал
         if total_votes >= max_votes * 0.6:  # 60% голосов за рост
-            return "UP"
+        return "UP"
         elif total_votes <= max_votes * 0.4:  # 40% голосов за рост = падение
-            return "DOWN"
-        else:
-            return "NEUTRAL"
-            
+        return "DOWN"
+    else:
+        return "NEUTRAL"
+
     except Exception as e:
         st.error(f"Ошибка при анализе: {e}")
         return "NEUTRAL"
@@ -784,33 +708,33 @@ async def get_candles(figi, interval=None):
         interval = INTERVAL
         
     try:
-        async with AsyncClient(TOKEN) as client:
+    async with AsyncClient(TOKEN) as client:
             # Используем timezone-aware datetime
             now = dt.datetime.now(dt.timezone.utc)
             # Увеличиваем период до 7 дней для получения большего количества данных
             from_ = now - dt.timedelta(days=7)
 
-            candles = await client.market_data.get_candles(
+        candles = await client.market_data.get_candles(
                 figi=figi,
-                from_=from_,
-                to=now,
+            from_=from_,
+            to=now,
                 interval=interval
-            )
+        )
             
             if not candles.candles:
                 st.warning("Не получены данные свечей")
                 return pd.DataFrame()
                 
-            df = pd.DataFrame([{
-                'time': c.time,
-                'open': float(c.open.units) + c.open.nano / 1e9,
-                'high': float(c.high.units) + c.high.nano / 1e9,
-                'low': float(c.low.units) + c.low.nano / 1e9,
-                'close': float(c.close.units) + c.close.nano / 1e9,
-                'volume': c.volume
-            } for c in candles.candles])
-            return df
-            
+        df = pd.DataFrame([{
+            'time': c.time,
+            'open': float(c.open.units) + c.open.nano / 1e9,
+            'high': float(c.high.units) + c.high.nano / 1e9,
+            'low': float(c.low.units) + c.low.nano / 1e9,
+            'close': float(c.close.units) + c.close.nano / 1e9,
+            'volume': c.volume
+        } for c in candles.candles])
+        return df
+
     except Exception as e:
         st.warning(f"⚠️ Ошибка при получении данных: {e}")
         return pd.DataFrame()
@@ -1308,8 +1232,8 @@ def main():
         st.warning(f"Недостаточно данных для анализа (получено {len(df)} свечей, нужно минимум 20)")
         return
 
-    df = calculate_indicators(df)
-    signal = analyze(df)
+        df = calculate_indicators(df)
+        signal = analyze(df)
 
     # Определяем текст интервала
     interval_text = "15 минутные"
